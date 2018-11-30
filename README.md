@@ -1,0 +1,2 @@
+# DoodleGAN
+cDCGAN generate doodle
