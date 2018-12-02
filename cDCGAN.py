@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sat Dec  1 13:02:13 2018
+Created on Sun Dec  2 15:03:54 2018
 
 @author: yusu
 """
-
-from __future__ import print_function, division
 
 from keras.layers import Input, Dense, Flatten, Dropout, Reshape, Concatenate
 from keras.layers import BatchNormalization, Activation, Conv2D, Conv2DTranspose,UpSampling2D
@@ -33,22 +31,20 @@ channels = 1
 img_size = 28
 img_w = img_h = img_size
 img_shape = (img_size, img_size, channels)
-n_epochs = 1000
+n_epochs = 200
 
-classes = ['aircraftcarrier',
-           'basketball',
-           'bed',
-           'ceilingfan',
-           'headphones',
-           'leg',
-           'panda',
-           'piano',
-           'raccoon',
-           'saxophone']
+classes = ['saxophone',
+        'raccoon',
+        'piano',
+        'panda',
+        'leg',
+        'headphones',
+        'ceiling_fan',
+        'bed',
+        'basket',
+        'aircraft_carrier']
 
-
-
-# Generator
+#  Generator
 def get_generator(input_layer, condition_layer):
     depth = 64
     p = 0.4
@@ -77,17 +73,20 @@ def get_generator(input_layer, condition_layer):
     conv3 = Activation(activation='relu')(conv3)
 
     # Define output layers
-    output = Conv2D(1, kernel_size=5, padding='same', activation='sigmoid')(conv3)
-
-    out = Activation("tanh")(output)
+    output = Conv2D(1, kernel_size=5, strides=1, padding="same")(conv3)
+    
+    out = Activation("sigmoid")(output)
     model = Model(inputs=[input_layer, condition_layer], outputs=out)
     model.summary()
   
-    return model, out
+    return model,out
+
 
 
 # discriminator
 def get_discriminator(input_layer, condition_layer,depth = 64,p = 0.4):
+    
+    #merged_input = Concatenate()([input_layer, condition_layer])  
     
     conv1 = Conv2D(depth*1, 5, strides=2, padding='same', activation='relu')(input_layer)
     conv1 = Dropout(p)(conv1)
@@ -108,7 +107,7 @@ def get_discriminator(input_layer, condition_layer,depth = 64,p = 0.4):
     model = Model(inputs=[input_layer, condition_layer], outputs=out)
     model.summary()
     
-    return model, out
+    return model,out
 
 
 def one_hot_encode(y):
@@ -130,16 +129,11 @@ def generate_random_labels(n):
     #print(y.shape)
     return y
 
-
-
-
-
-
 img_input = Input(shape=(28,28,1))
 disc_condition_input = Input(shape=(10,))
 discriminator, disc_out = get_discriminator(img_input, disc_condition_input)
 discriminator.compile(optimizer=Adam(0.0002, 0.5), loss='binary_crossentropy', metrics=['accuracy'])
-discriminator.trainable = False
+#discriminator.trainable = False
 
 noise_input = Input(shape=(100,))
 gen_condition_input = Input(shape=(10,))
@@ -151,73 +145,6 @@ gan_out = discriminator([x, disc_condition_input])
 AM = Model(inputs=[gan_input, gen_condition_input, disc_condition_input], output=gan_out)
 AM.summary()
 AM.compile(optimizer=Adam(0.0002, 0.5), loss='binary_crossentropy')
-
-def train(df, epochs=20,batch=128):
-    d_loss = []
-    a_loss = []
-    running_d_loss = 0
-    running_d_acc = 0
-    running_a_loss = 0
-    running_a_acc = 0
-    for i in range(1, epochs+1):
-        batch_idx = np.random.choice(df.shape[0] ,batch,replace=False)
-
-        real_imgs = np.array([np.reshape(row, (28, 28, 1)) for row in df['Image'].iloc[batch_idx]])
-        real_labels = labels[batch_idx,:]
-        #print(real_labels.shape)
-        
-        noise_data = generate_noise(batch,100)
-        random_labels = generate_random_labels(batch)
-        fake_imgs = generator.predict([noise_data, real_labels])
-        print("shape of generated new image", fake_imgs.shape)
-        # Train on soft targets (add noise to targets as well)
-        noise_prop = 0.05 # Randomly flip 5% of targets
-        
-        # Prepare labels for real data
-        true_labels = np.zeros((batch, 1)) + np.random.uniform(low=0.0, high=0.1, size=(batch, 1))
-        flipped_idx = np.random.choice(np.arange(len(true_labels)), size=int(noise_prop*len(true_labels)))
-        true_labels[flipped_idx] = 1 - true_labels[flipped_idx]
-        # Train discriminator on real data
-        make_trainable(discriminator, True)
-        d_loss_true = discriminator.train_on_batch([real_imgs, real_labels], true_labels)
-        
-        # Prepare labels for generated data
-        gene_labels = np.ones((batch, 1)) - np.random.uniform(low=0.0, high=0.1, size=(batch, 1))
-        flipped_idx = np.random.choice(np.arange(len(gene_labels)), size=int(noise_prop*len(gene_labels)))
-        gene_labels[flipped_idx] = 1 - gene_labels[flipped_idx]
-        
-        # Train discriminator on generated data
-        d_loss_gene = discriminator.train_on_batch([fake_imgs, real_labels], gene_labels)
-        d_loss.append(0.5 * np.add(d_loss_true, d_loss_gene))
-        running_d_loss += d_loss[-1][0]
-        running_d_acc += d_loss[-1][1]
-        make_trainable(discriminator, False)
-        
-        # Train generator
-        noise_data = generate_noise(batch, 100)
-        random_labels = generate_random_labels(batch)
-        g_loss = AM.train_on_batch([noise_data, random_labels, random_labels], np.zeros((batch, 1)))
-        a_loss.append(g_loss)
-        running_a_loss += a_loss[-1][0]
-        running_a_acc += a_loss[-1][1]
-    
-        log_mesg = "%d: [D loss: %f, acc: %f]" % (i, running_d_loss/i, running_d_acc/i)
-        #log_mesg = "%s  [A loss: %f, acc: %f]" % (log_mesg, running_a_loss/i, running_a_acc/i)
-        print(log_mesg)
-        
-        noise_data = generate_noise(128, 100)
-        random_labels = generate_random_labels(batch)
-        # We use same labels for generated images as in the real training batch
-        gen_imgs = generator.predict([noise_data, labels])
-        plt.figure(figsize=(5,5))
-        for k in range(16):
-            plt.subplot(4, 4, k+1)
-            plt.imshow(gen_imgs[k, :, :, 0], cmap='gray')
-            plt.axis('off')
-        plt.tight_layout()
-        plt.show()
-        plt.savefig('./images/{}.png'.format(i+1))
-    return a_loss, d_loss
 
 def get_all_classes():
     df = pd.DataFrame([], columns=['Image', 'Label'])
@@ -250,12 +177,88 @@ def make_trainable(net, is_trainable):
     for l in net.layers:
         l.trainable = is_trainable
         
+        
+def train(df,epochs=20,batch=128):
+    
+    exp_replay = []
+    num_batches = int(df.shape[0]/batch)
+    labels = one_hot_encode(np.array(df['Label']).astype(np.int64))
+    
+    d_loss = []
+    a_loss = []
+    running_d_loss = 0
+    running_d_acc = 0
+    running_a_loss = 0
+    running_a_acc = 0
+    for i in range(1, epochs+1):
+        for batch_idx in range(num_batches):
+            images = np.array([np.reshape(row, (28, 28, 1)) for row in df['Image'].iloc[batch_idx*batch:(batch_idx+1)*batch]])
+            y = labels[batch_idx*batch:(batch_idx+1)*batch] 
+
+            noise_data = generate_noise(batch, 100)
+            random_labels = generate_random_labels(batch)
+            generated_images = generator.predict([noise_data,y])
+            
+            true_labels = np.zeros((batch, 1)) + np.random.uniform(low=0.0, high=0.1, size=(batch, 1))
+            # Train discriminator on real data
+            d_loss_true = discriminator.train_on_batch([images, y], true_labels)
+            
+            gene_labels = np.ones((batch, 1)) - np.random.uniform(low=0.0, high=0.1, size=(batch, 1))
+            #train discriminator on generated data
+            d_loss_gene = discriminator.train_on_batch([generated_images, y], gene_labels)
+            
+            # Store a random point for experience replay
+            r_idx = np.random.randint(batch)
+            exp_replay.append([generated_images[r_idx], y[r_idx], gene_labels[r_idx]])
+
+            #If we have enough points, do experience replay
+            if len(exp_replay) == batch:
+                generated_images = np.array([p[0] for p in exp_replay])
+                labels = np.array([p[1] for p in exp_replay])
+                gene_labels = np.array([p[2] for p in exp_replay])
+                expprep_loss_gene = discriminator.train_on_batch([generated_images, labels], gene_labels)
+                exp_replay = []
+                break
+                
+            d_loss.append(0.5 * np.add(d_loss_true, d_loss_gene))
+            running_d_loss += d_loss[-1][0]
+            running_d_acc += d_loss[-1][1]
+            
+            
+            noise_data = generate_noise(batch, 100)
+            random_labels = generate_random_labels(batch)
+            a_loss.append(AM.train_on_batch([noise_data, random_labels, random_labels], np.zeros((batch, 1))))
+            #running_a_loss += a_loss[-1][0]
+            #running_a_acc += a_loss[-1][1]
+            
+            print ("[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [D accu : %f]" % (i,epochs, batch_idx, num_batches,
+                                                           running_d_loss , running_d_acc))
+            #log_mesg = "%d: [D loss: %f, acc: %f]" % (i, running_d_loss/i, running_d_acc/i)
+            #log_mesg = "%s  [A loss: %f, acc: %f]" % (log_mesg, running_a_loss/i, running_a_acc/i)
+            #print(log_mesg)
+
+        noise_data = generate_noise(batch, 100)
+        random_labels = generate_random_labels(batch)
+        # We use same labels for generated images as in the real training batch
+        gen_imgs = generator.predict([noise_data, y])
+
+        plt.figure(figsize=(5,5))
+        for k in range(16):
+            plt.subplot(4, 4, k+1)
+            plt.imshow(gen_imgs[k, :, :, 0], cmap='gray')
+            plt.axis('off')
+        plt.tight_layout()
+        plt.show()
+        plt.savefig('./images/{}.png'.format(i+1))
+
+    return a_loss, d_loss
 
 
 data = get_all_classes()
-labels = one_hot_encode(np.array(data['Label']).astype(np.int64))
+
 train(data, epochs=n_epochs, batch=128)
 
 
 save_model(generator.to_json(), "generator.json")
 save_model(AM.to_json(), "discriminator.json")
+
