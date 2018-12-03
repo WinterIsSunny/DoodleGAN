@@ -31,7 +31,7 @@ channels = 1
 img_size = 28
 img_w = img_h = img_size
 img_shape = (img_size, img_size, channels)
-n_epochs = 20
+n_epochs = 10
 
 classes = ['aircraftcarrier',
            'basketball',
@@ -159,16 +159,18 @@ def train(df, epochs=20,batch=128):
             log_mesg = "%s  [A loss: %f, acc: %f]" % (log_mesg, running_a_loss/i, running_a_acc/i)
             #print(log_mesg)
             print ("[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [D accu : %f][A loss : %f][A accu : %f]" % (i,epochs, batch_idx, num_batches,running_d_loss,running_d_acc,running_a_loss,running_a_acc))
-            #noise = np.random.uniform(-1.0, 1.0, size=[16, 100])
-            #gen_imgs = generator.predict(noise)
-            #plt.figure(figsize=(5,5))
-            #for k in range(gen_imgs.shape[0]):
-             #   plt.subplot(4, 4, k+1)
-             #   plt.imshow(gen_imgs[k, :, :, 0], cmap='gray')
-             #   plt.axis('off')
-            #plt.tight_layout()
-            #plt.show()
-            #plt.savefig('./images/trained_{}.png'.format(i+1))
+        noise = np.random.uniform(-1.0, 1.0, size=[16, 100])
+        gen_imgs = generator.predict(noise)
+        plt.figure(figsize=(5,5))
+        for k in range(gen_imgs.shape[0]):
+            plt.subplot(4, 4, k+1)
+            plt.imshow(gen_imgs[k, :, :, 0], cmap='gray')
+            plt.axis('off')
+        plt.tight_layout()
+        plt.show()
+        plt.savefig('./images/trained_{}.png'.format(i+1))
+        save_model(generator, "generator %d"%i)
+        save_model(AM, "discriminator 1%d"%i)
     return a_loss, d_loss
 
 
