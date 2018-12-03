@@ -31,7 +31,7 @@ channels = 1
 img_size = 28
 img_w = img_h = img_size
 img_shape = (img_size, img_size, channels)
-n_epochs = 1000
+n_epochs = 2000
 
 classes = ['aircraftcarrier',
            'basketball',
