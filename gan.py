@@ -155,15 +155,15 @@ def train(df, epochs=2000,batch=128):
         log_mesg = "%d: [D loss: %f, acc: %f]" % (i, running_d_loss/i, running_d_acc/i)
         log_mesg = "%s  [A loss: %f, acc: %f]" % (log_mesg, running_a_loss/i, running_a_acc/i)
         print(log_mesg)
-        noise = np.random.uniform(-1.0, 1.0, size=[16, 100])
-        gen_imgs = generator.predict(noise)
-        plt.figure(figsize=(5,5))
-        for k in range(gen_imgs.shape[0]):
-            plt.subplot(4, 4, k+1)
-            plt.imshow(gen_imgs[k, :, :, 0], cmap='gray')
-            plt.axis('off')
-        plt.tight_layout()
-        plt.show()
+        #noise = np.random.uniform(-1.0, 1.0, size=[16, 100])
+        #gen_imgs = generator.predict(noise)
+        #plt.figure(figsize=(5,5))
+        #for k in range(gen_imgs.shape[0]):
+        #    plt.subplot(4, 4, k+1)
+        #    plt.imshow(gen_imgs[k, :, :, 0], cmap='gray')
+        #    plt.axis('off')
+        #plt.tight_layout()
+        #plt.show()
         plt.savefig('./images/panda_{}.png'.format(i+1))
     return a_loss, d_loss
 
