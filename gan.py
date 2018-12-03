@@ -195,3 +195,17 @@ train(data, epochs=n_epochs, batch=128)
 
 save_model(generator, "generator")
 save_model(AM, "discriminator")
+
+
+## generate more images
+for i in range(500):
+    noise = np.random.uniform(-1.0, 1.0, size=[16, 100])
+    gen_imgs = generator.predict(noise)
+    plt.figure(figsize=(5,5))
+    for k in range(gen_imgs.shape[0]):
+        plt.subplot(4, 4, k+1)
+        plt.imshow(gen_imgs[k, :, :, 0], cmap='gray')
+        plt.axis('off')
+    plt.tight_layout()
+    plt.show()
+    plt.savefig('./images/image_{}.png'.format(i+1))
