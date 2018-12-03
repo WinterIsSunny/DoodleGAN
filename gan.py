@@ -22,7 +22,7 @@ import h5py
 import pandas as pd
 import matplotlib
 from matplotlib import pyplot as plt
-
+plt.switch_backend('agg')
 matplotlib.interactive(True)
 
 
