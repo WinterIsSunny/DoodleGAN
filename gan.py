@@ -31,7 +31,7 @@ channels = 1
 img_size = 28
 img_w = img_h = img_size
 img_shape = (img_size, img_size, channels)
-n_epochs = 6000
+n_epochs = 20
 
 classes = ['aircraftcarrier',
            'basketball',
@@ -125,7 +125,8 @@ def make_trainable(net, is_trainable):
         l.trainable = is_trainable
 
 
-def train(df, epochs=2000,batch=128):
+def train(df, epochs=20,batch=128):
+    num_batches = int(df.shape[0]/batch)
     d_loss = []
     a_loss = []
     running_d_loss = 0
@@ -133,38 +134,41 @@ def train(df, epochs=2000,batch=128):
     running_a_loss = 0
     running_a_acc = 0
     for i in range(1, epochs+1):
-        batch_idx = np.random.choice(df.shape[0] ,batch,replace=False)
+        for batch_idx in range(num_batches):
+            
+            #batch_idx = np.random.choice(df.shape[0] ,batch,replace=False)
 
-        real_imgs = np.array([np.reshape(row, (28, 28, 1)) for row in df['Image'].iloc[batch_idx]])
-        fake_imgs = generator.predict(np.random.uniform(-1.0, 1.0, size=[batch, 100]))
-        x = np.concatenate((real_imgs,fake_imgs))
-        y = np.ones([2*batch,1])
-        y[batch:,:] = 0
-        make_trainable(discriminator, True)
-        d_loss.append(discriminator.train_on_batch(x,y))
-        running_d_loss += d_loss[-1][0]
-        running_d_acc += d_loss[-1][1]
-        make_trainable(discriminator, False)
+            real_imgs = np.array([np.reshape(row, (28, 28, 1)) for row in df['Image'].iloc[batch_idx*batch:(batch_idx+1)*batch]])
+            fake_imgs = generator.predict(np.random.uniform(-1.0, 1.0, size=[batch, 100]))
+            x = np.concatenate((real_imgs,fake_imgs))
+            y = np.ones([2*batch,1])
+            y[batch:,:] = 0
+            make_trainable(discriminator, True)
+            d_loss.append(discriminator.train_on_batch(x,y))
+            running_d_loss += d_loss[-1][0]
+            running_d_acc += d_loss[-1][1]
+            make_trainable(discriminator, False)
 
-        noise = np.random.uniform(-1.0, 1.0, size=[batch, 100])
-        y = np.ones([batch,1])
-        a_loss.append(AM.train_on_batch(noise,y))
-        running_a_loss += a_loss[-1][0]
-        running_a_acc += a_loss[-1][1]
+            noise = np.random.uniform(-1.0, 1.0, size=[batch, 100])
+            y = np.ones([batch,1])
+            a_loss.append(AM.train_on_batch(noise,y))
+            running_a_loss += a_loss[-1][0]
+            running_a_acc += a_loss[-1][1]
 
-        log_mesg = "%d: [D loss: %f, acc: %f]" % (i, running_d_loss/i, running_d_acc/i)
-        log_mesg = "%s  [A loss: %f, acc: %f]" % (log_mesg, running_a_loss/i, running_a_acc/i)
-        print(log_mesg)
-        #noise = np.random.uniform(-1.0, 1.0, size=[16, 100])
-        #gen_imgs = generator.predict(noise)
-        #plt.figure(figsize=(5,5))
-        #for k in range(gen_imgs.shape[0]):
-        #    plt.subplot(4, 4, k+1)
-        #    plt.imshow(gen_imgs[k, :, :, 0], cmap='gray')
-        #    plt.axis('off')
-        #plt.tight_layout()
-        #plt.show()
-        #plt.savefig('./images/panda_{}.png'.format(i+1))
+            log_mesg = "%d: [D loss: %f, acc: %f]" % (i, running_d_loss/i, running_d_acc/i)
+            log_mesg = "%s  [A loss: %f, acc: %f]" % (log_mesg, running_a_loss/i, running_a_acc/i)
+            #print(log_mesg)
+            print ("[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [D accu : %f][A loss : %f][A accu : %f]" % (i,epochs, batch_idx, num_batches,running_d_loss,running_d_acc,running_a_loss,running_a_acc))
+            #noise = np.random.uniform(-1.0, 1.0, size=[16, 100])
+            #gen_imgs = generator.predict(noise)
+            #plt.figure(figsize=(5,5))
+            #for k in range(gen_imgs.shape[0]):
+             #   plt.subplot(4, 4, k+1)
+             #   plt.imshow(gen_imgs[k, :, :, 0], cmap='gray')
+             #   plt.axis('off')
+            #plt.tight_layout()
+            #plt.show()
+            #plt.savefig('./images/trained_{}.png'.format(i+1))
     return a_loss, d_loss
 
 
@@ -209,3 +213,4 @@ for i in range(500):
     plt.tight_layout()
     plt.show()
     plt.savefig('./images/image_{}.png'.format(i+1))
+    plt.close()
