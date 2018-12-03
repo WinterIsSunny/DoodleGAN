@@ -31,7 +31,7 @@ channels = 1
 img_size = 28
 img_w = img_h = img_size
 img_shape = (img_size, img_size, channels)
-n_epochs = 2000
+n_epochs = 6000
 
 classes = ['aircraftcarrier',
            'basketball',
@@ -164,7 +164,7 @@ def train(df, epochs=2000,batch=128):
         #    plt.axis('off')
         #plt.tight_layout()
         #plt.show()
-        plt.savefig('./images/panda_{}.png'.format(i+1))
+        #plt.savefig('./images/panda_{}.png'.format(i+1))
     return a_loss, d_loss
 
 
