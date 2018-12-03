@@ -6,9 +6,6 @@ Created on Sun Dec  2 22:48:00 2018
 @author: yusu
 """
 
-from keras.models import load_model
-import numpy as np
-from matplotlib import pyplot as plt
 
 generator = load_model('generator.h5')
 
