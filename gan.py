@@ -25,7 +25,7 @@ from matplotlib import pyplot as plt
 plt.switch_backend('agg')
 matplotlib.interactive(True)
 
-
+os.makedirs('images', exist_ok=True)
 
 channels = 1
 img_size = 28
