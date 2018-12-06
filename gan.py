@@ -158,7 +158,7 @@ def train(df, epochs=20,batch=128):
             log_mesg = "%d: [D loss: %f, acc: %f]" % (i, running_d_loss/i, running_d_acc/i)
             log_mesg = "%s  [A loss: %f, acc: %f]" % (log_mesg, running_a_loss/i, running_a_acc/i)
             #print(log_mesg)
-            print ("[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [D accu : %f][A loss : %f][A accu : %f]" % (i,epochs, batch_idx, num_batches,running_d_loss,running_d_acc,running_a_loss,running_a_acc))
+            print ("[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [D accu : %f][A loss : %f][A accu : %f]" % (i,epochs, batch_idx, num_batches,running_d_loss/i,running_d_acc/i,running_a_loss/i,running_a_acc/i))
         noise = np.random.uniform(-1.0, 1.0, size=[16, 100])
         gen_imgs = generator.predict(noise)
         plt.figure(figsize=(5,5))
@@ -168,7 +168,7 @@ def train(df, epochs=20,batch=128):
             plt.axis('off')
         plt.tight_layout()
         plt.show()
-        plt.savefig('./images/trained_{}.png'.format(i+1))
+        plt.savefig('./images/epoch_{}.png'.format(i))
         save_model(generator, "generator %d"%i)
         save_model(AM, "discriminator 1%d"%i)
     return a_loss, d_loss
